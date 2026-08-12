@@ -1,92 +1,239 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Spider-Man: Web Shooter AR</title>
-  <link rel="stylesheet" href="/src/style.css">
-  <script src="/mediapipe/hands/hands.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WEB SYSTEMS // STARK–PARKER</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.1/examples/jsm/"
+    }
+  }
+  </script>
 </head>
 <body>
-  <div id="app">
-    <!-- Camera Video Feed Background -->
-    <div id="video-container">
-      <video id="webcam-video" autoplay playsinline muted></video>
+  <canvas id="scene"></canvas>
+
+  <div id="fx-vignette"></div>
+  <div id="fx-scan"></div>
+  <div id="fx-chroma"></div>
+  <div id="fx-flash"></div>
+  <div id="fx-shake"></div>
+
+  <div id="reticle" class="hidden">
+    <div class="ret-diamond"></div>
+    <div class="ret-brackets"></div>
+    <div class="ret-label" id="ret-label">NO LOCK</div>
+    <div class="ret-mass" id="ret-mass"></div>
+  </div>
+
+  <div id="charge-ring" class="hidden">
+    <svg viewBox="0 0 120 120">
+      <circle class="ring-bg" cx="60" cy="60" r="52" />
+      <circle class="ring-fg" id="charge-arc" cx="60" cy="60" r="52" />
+    </svg>
+    <span id="charge-txt">LOCK</span>
+  </div>
+
+  <header id="hud-top" class="hud-layer hidden">
+    <div class="hud-brand">
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 64 64">
+          <circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" stroke-width="1.4" />
+          <circle cx="32" cy="32" r="8" fill="none" stroke="currentColor" stroke-width="1.6" />
+          <path d="M32 4 L36 18 L32 14 L28 18 Z M32 60 L36 46 L32 50 L28 46 Z M4 32 L18 36 L14 32 L18 28 Z M60 32 L46 36 L50 32 L46 28 Z" fill="currentColor" />
+          <path d="M20 14 Q32 28 44 14 M20 50 Q32 36 44 50 M14 22 Q30 32 14 42 M50 22 Q34 32 50 42" fill="none" stroke="currentColor" stroke-width="1.3" />
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="tiny">STARK · PARKER COOPERATIVE</div>
+        <div class="title">WEB SYSTEMS <span>OS 4.8.1</span></div>
+        <div class="tiny gold" id="ai-line">FRIDAY // KAREN LINK · NOMINAL</div>
+      </div>
     </div>
+    <div class="hud-clock">
+      <div class="tiny">SIM TIME</div>
+      <div id="clock">00:00.00</div>
+    </div>
+    <div class="hud-status">
+      <div class="pill" id="pill-cam"><i></i> OPTICS</div>
+      <div class="pill" id="pill-track"><i></i> KINEMATICS</div>
+      <div class="pill" id="pill-web"><i></i> FLUID</div>
+    </div>
+  </header>
 
-    <!-- Web Shooting & Aiming Canvas -->
-    <canvas id="game-canvas"></canvas>
-
-    <!-- Top Bar -->
-    <div class="top-nav">
-      <div class="brand">
-        <span class="spidey-icon">🕷️</span>
-        <h1>SPIDER-MAN WEB SHOOTER</h1>
+  <aside id="hud-left" class="hud-layer hidden">
+    <div class="panel">
+      <div class="panel-h">WEB CARTRIDGE</div>
+      <div class="tanks">
+        <div class="tank">
+          <div class="tank-fill" id="tank-l"></div>
+          <span>L</span>
+        </div>
+        <div class="tank">
+          <div class="tank-fill" id="tank-r"></div>
+          <span>R</span>
+        </div>
       </div>
-
-      <!-- Suit / Web Style Picker -->
-      <div class="suit-picker">
-        <span class="picker-label">SUIT:</span>
-        <button class="suit-btn active" data-suit="classic">🔴 Classic</button>
-        <button class="suit-btn" data-suit="venom">⚡ Venom</button>
-        <button class="suit-btn" data-suit="symbiote">🖤 Symbiote</button>
-        <button class="suit-btn" data-suit="iron">🟡 Iron Spider</button>
+      <div class="tiny" id="fluid-readout">1.00 · 1.00</div>
+    </div>
+    <div class="panel">
+      <div class="panel-h">OPERATOR HANDS</div>
+      <div class="hand-row" id="hand-l-row">
+        <div class="hand-id">L</div>
+        <div>
+          <div class="hand-state" id="hand-l-state">ABSENT</div>
+          <div class="tiny" id="hand-l-type">—</div>
+        </div>
+        <div class="bar"><i id="hand-l-bar"></i></div>
       </div>
-
-      <div class="top-controls">
-        <button class="action-btn" id="btn-cam-view">📹 AR View</button>
-        <button class="action-btn" id="btn-clear">🧹 Clear Webs</button>
-        <button class="icon-btn" id="btn-sound" title="Sound Mute">🔊</button>
+      <div class="hand-row" id="hand-r-row">
+        <div class="hand-id">R</div>
+        <div>
+          <div class="hand-state" id="hand-r-state">ABSENT</div>
+          <div class="tiny" id="hand-r-type">—</div>
+        </div>
+        <div class="bar"><i id="hand-r-bar"></i></div>
       </div>
     </div>
-
-    <!-- Bottom Status & Gesture Guide -->
-    <div class="bottom-bar">
-      <!-- Live Status Feedback -->
-      <div class="status-banner" id="hud-status">
-        SHOW HAND TO CAMERA (🤟 TO SHOOT, ✊ WITHIN 2s TO GRAB)
-      </div>
-
-      <!-- Live Finger Diagnostics -->
-      <div class="gesture-indicator" id="gesture-guide">
-        <div class="guide-title">HAND TRACKING:</div>
-        <div class="finger-list">
-          <span class="f-tag" id="f-thumb">Thumb</span>
-          <span class="f-tag" id="f-index">Index</span>
-          <span class="f-tag" id="f-middle">Middle</span>
-          <span class="f-tag" id="f-ring">Ring</span>
-          <span class="f-tag" id="f-pinky">Pinky</span>
+    <div class="panel">
+      <div class="panel-h">LOADOUT</div>
+      <div class="loadout">
+        <div class="lo active" id="lo-grapple">
+          <b>GRAPPLE</b>
+          <span>KNUCKLES OUT 🤟</span>
+        </div>
+        <div class="lo" id="lo-impact">
+          <b>IMPACT</b>
+          <span>PALM OUT 🤟</span>
         </div>
       </div>
     </div>
+  </aside>
 
-    <!-- Welcome / Start Camera Modal -->
-    <div class="modal-overlay" id="welcome-modal">
-      <div class="modal-card">
-        <div class="card-icon">🕷️ 🤟</div>
-        <h2>SPIDER-MAN WEB SHOOTER</h2>
-        <div class="instructions">
-          <div class="instr-row">
-            <span class="gesture-badge">🤟</span>
-            <div>
-              <strong>AIM & SHOOT:</strong> Point at the screen and make the Spider-Man sign (fold Middle & Ring fingers, extend Index, Pinky & Thumb).
-            </div>
-          </div>
-          <div class="instr-row">
-            <span class="gesture-badge">✊</span>
-            <div>
-              <strong>GRAB & PULL (2s Limit):</strong> Once a web hits, make a <strong>FIST within 2 seconds</strong> to grab the web line and pull it around! If you don't, it lets loose and dissolves.
-            </div>
-          </div>
-        </div>
-        <div class="btn-group">
-          <button class="primary-btn" id="btn-start-camera">START CAMERA</button>
-          <button class="secondary-btn" id="btn-mouse-mode">PLAY WITH MOUSE</button>
-        </div>
+  <aside id="hud-right" class="hud-layer hidden">
+    <div class="panel">
+      <div class="panel-h">COMBAT LOG</div>
+      <ul id="log"></ul>
+    </div>
+    <div class="panel score-panel">
+      <div class="panel-h">STYLE</div>
+      <div id="score">0</div>
+      <div class="tiny" id="combo">x1 · WAITING</div>
+    </div>
+    <div class="panel">
+      <div class="panel-h">TARGET</div>
+      <div id="tgt-name">SEARCHING…</div>
+      <div class="tiny" id="tgt-meta">NO MASS LOCK</div>
+      <div class="tension">
+        <div class="tiny">TENSION</div>
+        <div class="bar fat"><i id="tension-bar"></i></div>
       </div>
+    </div>
+  </aside>
+
+  <div id="pip" class="hidden">
+    <div class="pip-frame">
+      <video id="cam" playsinline muted autoplay></video>
+      <canvas id="overlay"></canvas>
+      <div class="pip-meta">
+        <span>OPTIC-A · MIRROR</span>
+        <span id="pip-fps">30 FPS</span>
+      </div>
+      <div class="pip-corners"></div>
     </div>
   </div>
 
-  <script type="module" src="/src/main.js"></script>
+  <footer id="hud-bot" class="hud-layer hidden">
+    <div class="hint">
+      <kbd>🤟</kbd> HOLD TO FIRE &amp; KEEP THE LINE · RELEASE FINGERS TO LET GO
+    </div>
+    <div class="hint dim">
+      KNUCKLES = GRAPPLE PULL · PALM = IMPACT YANK · MOVE OPPOSITE TO REEL · DUAL HANDS FOR HEAVIES
+    </div>
+    <div class="hint keys">
+      <span><kbd>H</kbd> HELP</span>
+      <span><kbd>R</kbd> RESET</span>
+      <span><kbd>M</kbd> MUTE</span>
+      <span><kbd>D</kbd> DEBUG</span>
+    </div>
+  </footer>
+
+  <div id="help" class="hidden">
+    <div class="help-card">
+      <div class="panel-h">OPERATOR BRIEF</div>
+      <ol>
+        <li>Stand where the camera sees your full hand. Mirror view is already on.</li>
+        <li>Make the shooter: index + pinky up, middle + ring folded — <b>🤟</b>.</li>
+        <li>Hold it still. The ring must fill. We will not fire on a twitch.</li>
+        <li>Keep the pose to keep the web. Open your hand to cut the line.</li>
+        <li><b>Knuckles toward camera</b> = silk grapple. Pull the other way to reel objects in.</li>
+        <li><b>Palm toward camera</b> = impact web. Hits harder, still holdable.</li>
+        <li>Two hands, two lines. Dual-web the taxi or dumpster.</li>
+      </ol>
+      <button id="help-close" class="btn">ACKNOWLEDGE</button>
+    </div>
+  </div>
+
+  <div id="debug" class="hidden"></div>
+
+  <section id="boot">
+    <div class="boot-grid"></div>
+    <div class="boot-inner">
+      <div class="boot-mark">
+        <svg viewBox="0 0 160 160">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#6ef3ff" />
+              <stop offset="0.5" stop-color="#f0c14b" />
+              <stop offset="1" stop-color="#e8363a" />
+            </linearGradient>
+          </defs>
+          <circle cx="80" cy="80" r="72" fill="none" stroke="url(#g)" stroke-width="1.5" opacity="0.7" />
+          <circle cx="80" cy="80" r="58" fill="none" stroke="url(#g)" stroke-width="0.6" stroke-dasharray="4 6" />
+          <circle cx="80" cy="80" r="18" fill="none" stroke="#6ef3ff" stroke-width="2" />
+          <circle cx="80" cy="80" r="6" fill="#6ef3ff" />
+          <path d="M80 12 L86 42 L80 34 L74 42 Z M80 148 L86 118 L80 126 L74 118 Z M12 80 L42 86 L34 80 L42 74 Z M148 80 L118 86 L126 80 L118 74 Z" fill="#f0c14b" />
+          <path d="M48 32 Q80 70 112 32 M48 128 Q80 90 112 128 M32 52 Q74 80 32 108 M128 52 Q86 80 128 108" fill="none" stroke="#e8363a" stroke-width="2.2" stroke-linecap="round" />
+        </svg>
+      </div>
+      <div class="boot-kicker">STARK INDUSTRIES  ×  PARKER INDUSTRIES</div>
+      <h1>WEB COMBAT SIMULATOR</h1>
+      <div class="boot-sub">PHOTONIC SILK · INERTIAL TARGETING · HAND-KINEMATIC FIRE CONTROL</div>
+      <pre id="boot-log"></pre>
+      <div class="boot-actions">
+        <button id="engage" class="btn mega" disabled>INITIALIZING…</button>
+        <button id="practice" class="btn ghost" type="button">MOUSE PRACTICE</button>
+      </div>
+      <p class="boot-note">Camera locks a real 🤟 — we only fire after a confirmed hold, never on a twitch. Mouse practice: hold click to charge, right-click for impact.</p>
+    </div>
+  </section>
+
+  <section id="calibrate" class="hidden">
+    <div class="cal-card">
+      <div class="panel-h">CALIBRATE SHOOTER</div>
+      <p>Hold a clean <b>🤟</b> until the lock fills. Index + pinky extended, middle + ring folded. Keep it still.</p>
+      <div class="cal-pose">
+        <div class="pose-art">🤟</div>
+        <div class="cal-ring">
+          <svg viewBox="0 0 140 140">
+            <circle class="ring-bg" cx="70" cy="70" r="60" />
+            <circle class="ring-fg" id="cal-arc" cx="70" cy="70" r="60" />
+          </svg>
+        </div>
+      </div>
+      <div id="cal-status">SEARCHING FOR HAND…</div>
+      <div class="tiny">Palm or knuckles both work — that just picks the web type.</div>
+      <button id="skip-cal" class="btn ghost" type="button" style="margin-top:16px;pointer-events:auto">SKIP CALIBRATION</button>
+    </div>
+  </section>
+
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
