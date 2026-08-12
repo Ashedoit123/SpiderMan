@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spider-Man: Web Shooter AR</title>
+  <link rel="stylesheet" href="/src/style.css">
+  <script src="/mediapipe/hands/hands.js"></script>
+</head>
+<body>
+  <div id="app">
+    <!-- Camera Video Feed Background -->
+    <div id="video-container">
+      <video id="webcam-video" autoplay playsinline muted></video>
+    </div>
+
+    <!-- Web Shooting & Aiming Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Top Bar -->
+    <div class="top-nav">
+      <div class="brand">
+        <span class="spidey-icon">🕷️</span>
+        <h1>SPIDER-MAN WEB SHOOTER</h1>
+      </div>
+
+      <!-- Suit / Web Style Picker -->
+      <div class="suit-picker">
+        <span class="picker-label">SUIT:</span>
+        <button class="suit-btn active" data-suit="classic">🔴 Classic</button>
+        <button class="suit-btn" data-suit="venom">⚡ Venom</button>
+        <button class="suit-btn" data-suit="symbiote">🖤 Symbiote</button>
+        <button class="suit-btn" data-suit="iron">🟡 Iron Spider</button>
+      </div>
+
+      <div class="top-controls">
+        <button class="action-btn" id="btn-cam-view">📹 AR View</button>
+        <button class="action-btn" id="btn-clear">🧹 Clear Webs</button>
+        <button class="icon-btn" id="btn-sound" title="Sound Mute">🔊</button>
+      </div>
+    </div>
+
+    <!-- Bottom Status & Gesture Guide -->
+    <div class="bottom-bar">
+      <!-- Live Status Feedback -->
+      <div class="status-banner" id="hud-status">
+        SHOW HAND TO CAMERA (🤟 TO SHOOT, ✊ WITHIN 2s TO GRAB)
+      </div>
+
+      <!-- Live Finger Diagnostics -->
+      <div class="gesture-indicator" id="gesture-guide">
+        <div class="guide-title">HAND TRACKING:</div>
+        <div class="finger-list">
+          <span class="f-tag" id="f-thumb">Thumb</span>
+          <span class="f-tag" id="f-index">Index</span>
+          <span class="f-tag" id="f-middle">Middle</span>
+          <span class="f-tag" id="f-ring">Ring</span>
+          <span class="f-tag" id="f-pinky">Pinky</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Welcome / Start Camera Modal -->
+    <div class="modal-overlay" id="welcome-modal">
+      <div class="modal-card">
+        <div class="card-icon">🕷️ 🤟</div>
+        <h2>SPIDER-MAN WEB SHOOTER</h2>
+        <div class="instructions">
+          <div class="instr-row">
+            <span class="gesture-badge">🤟</span>
+            <div>
+              <strong>AIM & SHOOT:</strong> Point at the screen and make the Spider-Man sign (fold Middle & Ring fingers, extend Index, Pinky & Thumb).
+            </div>
+          </div>
+          <div class="instr-row">
+            <span class="gesture-badge">✊</span>
+            <div>
+              <strong>GRAB & PULL (2s Limit):</strong> Once a web hits, make a <strong>FIST within 2 seconds</strong> to grab the web line and pull it around! If you don't, it lets loose and dissolves.
+            </div>
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="primary-btn" id="btn-start-camera">START CAMERA</button>
+          <button class="secondary-btn" id="btn-mouse-mode">PLAY WITH MOUSE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
